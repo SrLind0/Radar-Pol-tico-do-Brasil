@@ -1,0 +1,6 @@
+{
+  "name": "Radar Político Brasil",
+  "description": "Plataforma de transparência pública, atuação legislativa e educação eleitoral em linguagem simples com dados oficiais de políticos brasileiros.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

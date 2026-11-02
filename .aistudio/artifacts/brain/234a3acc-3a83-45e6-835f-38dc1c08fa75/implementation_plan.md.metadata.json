@@ -1,0 +1,5 @@
+{
+  "summary":  "Especificação técnica detalhada e plano de implementação para integração dos dados do Fundão Eleitoral (FEFC) na plataforma de transparência pública, abrangendo modelagem relacional PostgreSQL, endpoints REST, especificações de componentes UI/UX (gráfico 3D e perfil individual) e checklist de implementação.",
+  "updatedAt":  "2026-10-31T20:01:28.598988826Z",
+  "userFacing":  true
+}
