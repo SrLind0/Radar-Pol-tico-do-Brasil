@@ -25,6 +25,7 @@ import {
   TransparenciaFederalData,
   formatarMoedaCompacta,
   formatarMoedaCompleta,
+  carregarDadosOficiais,
 } from '../data/transparenciaData';
 import { GastosGovernoPieChart } from './GastosGovernoPieChart';
 import { SerieHistoricaImpostosChart } from './SerieHistoricaImpostosChart';
@@ -43,14 +44,11 @@ export const TransparenciaFederalHeader: React.FC<Props> = ({ totalPoliticosCada
   const carregarDadosAoVivo = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/transparencia/indicadores');
-      if (res.ok) {
-        const json = await res.json();
-        setDados(json);
-        setSincronizadoEm(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
-      }
+      const dadosCarregados = await carregarDadosOficiais('/api/transparencia/indicadores', 4000);
+      setDados(dadosCarregados);
+      setSincronizadoEm(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
     } catch (_err) {
-      // Mantém o snapshot confiável
+      setDados(DADOS_TRANSPARENCIA_SNAPSHOT);
     } finally {
       setLoading(false);
     }
@@ -66,6 +64,8 @@ export const TransparenciaFederalHeader: React.FC<Props> = ({ totalPoliticosCada
         return <Heart className="w-3.5 h-3.5 text-rose-500" />;
       case 'educacao':
         return <GraduationCap className="w-3.5 h-3.5 text-blue-500" />;
+      case 'defesa':
+        return <Shield className="w-3.5 h-3.5 text-sky-600" />;
       case 'seguranca':
         return <Shield className="w-3.5 h-3.5 text-amber-500" />;
       case 'protecaoSocial':

@@ -15,7 +15,8 @@ import {
   Scale,
   Sliders,
   Layers,
-  AlertCircle
+  AlertCircle,
+  Landmark
 } from 'lucide-react';
 import {
   SERIE_HISTORICA_IMPOSTOS_2000_2026,
@@ -94,6 +95,7 @@ export const SerieHistoricaImpostosChart: React.FC<Props> = ({
       valores = [
         ...dadosFiltrados.map((d) => d.impostosFederais),
         ...dadosFiltrados.map((d) => d.gastosPrimarios),
+        ...dadosFiltrados.map((d) => d.gastosDivida),
       ];
     }
 
@@ -148,13 +150,15 @@ export const SerieHistoricaImpostosChart: React.FC<Props> = ({
   };
 
   // Traçado vetorial dos caminhos SVG (linhas e áreas com transição suave)
-  const { pathImpostos, pathAreaImpostos, pathGastos, pathAreaGastos, pontosMapeados } = useMemo(() => {
+  const { pathImpostos, pathAreaImpostos, pathGastos, pathAreaGastos, pathDivida, pathAreaDivida, pontosMapeados } = useMemo(() => {
     if (dadosFiltrados.length === 0) {
       return {
         pathImpostos: '',
         pathAreaImpostos: '',
         pathGastos: '',
         pathAreaGastos: '',
+        pathDivida: '',
+        pathAreaDivida: '',
         pontosMapeados: [],
       };
     }
@@ -164,7 +168,8 @@ export const SerieHistoricaImpostosChart: React.FC<Props> = ({
       const x = getX(i, n);
       const yImp = getY(d.impostosFederais);
       const yGas = getY(d.gastosPrimarios);
-      return { ...d, x, yImp, yGas };
+      const yDiv = getY(d.gastosDivida);
+      return { ...d, x, yImp, yGas, yDiv };
     });
 
     // Construtor de caminho Bézier suave (spline cúbica relaxada)
@@ -195,16 +200,23 @@ export const SerieHistoricaImpostosChart: React.FC<Props> = ({
     const pImp = buildSmoothPath(ptsImp);
     const pAreaImp = `${pImp} L ${pontos[n - 1].x} ${padTop + chartHeight} L ${pontos[0].x} ${padTop + chartHeight} Z`;
 
-    // Pontos para gastos
+    // Pontos para gastos primários
     const ptsGas = pontos.map((p) => ({ x: p.x, y: p.yGas }));
     const pGas = buildSmoothPath(ptsGas);
     const pAreaGas = `${pGas} L ${pontos[n - 1].x} ${padTop + chartHeight} L ${pontos[0].x} ${padTop + chartHeight} Z`;
+
+    // Pontos para gastos com dívida pública (juros e encargos)
+    const ptsDiv = pontos.map((p) => ({ x: p.x, y: p.yDiv }));
+    const pDiv = buildSmoothPath(ptsDiv);
+    const pAreaDiv = `${pDiv} L ${pontos[n - 1].x} ${padTop + chartHeight} L ${pontos[0].x} ${padTop + chartHeight} Z`;
 
     return {
       pathImpostos: pImp,
       pathAreaImpostos: pAreaImp,
       pathGastos: pGas,
       pathAreaGastos: pAreaGas,
+      pathDivida: pDiv,
+      pathAreaDivida: pAreaDiv,
       pontosMapeados: pontos,
     };
   }, [dadosFiltrados, limitesY]);
@@ -608,6 +620,12 @@ export const SerieHistoricaImpostosChart: React.FC<Props> = ({
                     <stop offset="0%" stopColor="#2563eb" stopOpacity="0.30" />
                     <stop offset="100%" stopColor="#2563eb" stopOpacity="0.02" />
                   </linearGradient>
+
+                  {/* Gradiente para Gastos com Dívida Pública (Juros e Encargos) */}
+                  <linearGradient id="gradDivida" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#d97706" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#d97706" stopOpacity="0.02" />
+                  </linearGradient>
                 </defs>
 
                 {/* Grade Horizontal (Linhas de valor do Eixo Y) */}
@@ -649,7 +667,23 @@ export const SerieHistoricaImpostosChart: React.FC<Props> = ({
                   strokeWidth="1.5"
                 />
 
-                {/* ÁREA E LINHA: GASTOS PÚBLICOS (Visível apenas se NÃO estiver em modo isolado) */}
+                {/* ÁREA E LINHA: GASTOS COM DÍVIDA PÚBLICA (Visível apenas se NÃO estiver em modo isolado) */}
+                {!apenasImpostosFederais && (
+                  <g className="transition-all duration-300">
+                    <path d={pathAreaDivida} fill="url(#gradDivida)" />
+                    <path
+                      d={pathDivida}
+                      fill="none"
+                      stroke="#d97706"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeDasharray="5 3"
+                    />
+                  </g>
+                )}
+
+                {/* ÁREA E LINHA: GASTOS PÚBLICOS PRIMÁRIOS (Visível apenas se NÃO estiver em modo isolado) */}
                 {!apenasImpostosFederais && (
                   <g className="transition-all duration-300">
                     <path d={pathAreaGastos} fill="url(#gradGastos)" />
@@ -748,15 +782,27 @@ export const SerieHistoricaImpostosChart: React.FC<Props> = ({
                           />
                           {/* Ponto indicador de Gastos se em modo geral */}
                           {!apenasImpostosFederais && (
-                            <circle
-                              cx={match.x}
-                              cy={match.yGas}
-                              r={5}
-                              fill="#2563eb"
-                              stroke="#ffffff"
-                              strokeWidth="2.5"
-                              className="drop-shadow-xs"
-                            />
+                            <>
+                              <circle
+                                cx={match.x}
+                                cy={match.yGas}
+                                r={5}
+                                fill="#2563eb"
+                                stroke="#ffffff"
+                                strokeWidth="2.5"
+                                className="drop-shadow-xs"
+                              />
+                              {/* Ponto indicador de Dívida Pública */}
+                              <circle
+                                cx={match.x}
+                                cy={match.yDiv}
+                                r={5}
+                                fill="#d97706"
+                                stroke="#ffffff"
+                                strokeWidth="2.5"
+                                className="drop-shadow-xs"
+                              />
+                            </>
                           )}
                         </>
                       );
@@ -853,12 +899,16 @@ export const SerieHistoricaImpostosChart: React.FC<Props> = ({
             </div>
 
             {/* Grid de Valores Formatados em Moeda Brasileira */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3">
+            <div className={`grid gap-3 pt-3 ${
+              apenasImpostosFederais
+                ? 'grid-cols-1'
+                : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
+            }`}>
               
               {/* Valor 1: Arrecadação de Impostos Federais */}
               <div className={`p-3 rounded-xl border ${
                 apenasImpostosFederais
-                  ? 'bg-emerald-950/40 border-emerald-800/80 sm:col-span-3'
+                  ? 'bg-emerald-950/40 border-emerald-800/80'
                   : 'bg-slate-800/60 border-slate-700'
               }`}>
                 <div className="flex items-center justify-between">
@@ -878,15 +928,20 @@ export const SerieHistoricaImpostosChart: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Se Visão Geral Completa: Exibir Gastos Primários e Saldo */}
+              {/* Se Visão Geral Completa: Exibir Gastos Primários, Dívida e Balanço com Dívida */}
               {!apenasImpostosFederais && (
                 <>
                   {/* Valor 2: Gastos Primários */}
                   <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700">
-                    <span className="text-[10px] uppercase font-bold text-blue-400 tracking-wider flex items-center gap-1">
-                      <DollarSign className="w-3 h-3" />
-                      Gastos Primários da União (Despesas)
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-blue-400 tracking-wider flex items-center gap-1">
+                        <DollarSign className="w-3 h-3" />
+                        Gastos Primários da União
+                      </span>
+                      <span className="text-[10px] text-blue-300 font-bold bg-blue-950/80 px-1.5 py-0.2 rounded border border-blue-800/50">
+                        Tesouro
+                      </span>
+                    </div>
                     <div className="text-lg sm:text-xl font-black text-white mt-1">
                       {formatarValorEscala(pontoAtivo.gastosPrimarios)}
                     </div>
@@ -895,21 +950,47 @@ export const SerieHistoricaImpostosChart: React.FC<Props> = ({
                     </div>
                   </div>
 
-                  {/* Valor 3: Balanço Arrecadação vs Despesa */}
+                  {/* Valor 3: Gastos com Dívida Pública (Juros e Encargos) */}
                   <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700">
-                    <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider flex items-center gap-1">
-                      <Scale className="w-3 h-3" />
-                      Balanço Arrecadação vs. Despesas
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider flex items-center gap-1">
+                        <Landmark className="w-3 h-3" />
+                        Gastos com Dívida Pública
+                      </span>
+                      <span className="text-[10px] text-amber-300 font-bold bg-amber-950/80 px-1.5 py-0.2 rounded border border-amber-800/50">
+                        Bacen / DPF
+                      </span>
+                    </div>
+                    <div className="text-lg sm:text-xl font-black text-amber-300 mt-1">
+                      {formatarValorEscala(pontoAtivo.gastosDivida)}
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                      Exato: {formatarMoedaCompleta(pontoAtivo.gastosDivida)}
+                    </div>
+                  </div>
+
+                  {/* Valor 4: Balanço Arrecadação vs Despesas (Contando c/ a Dívida) */}
+                  <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-300 tracking-wider flex items-center gap-1">
+                        <Scale className="w-3 h-3" />
+                        Balanço (c/ Gastos da Dívida)
+                      </span>
+                    </div>
                     <div className={`text-lg sm:text-xl font-black mt-1 ${
                       pontoAtivo.balancoArrecadacaoDespesa >= 0 ? 'text-emerald-400' : 'text-rose-400'
                     }`}>
                       {pontoAtivo.balancoArrecadacaoDespesa >= 0 ? '+' : ''}
                       {formatarValorEscala(pontoAtivo.balancoArrecadacaoDespesa)}
                     </div>
-                    <span className="text-[10px] text-slate-400">
-                      {pontoAtivo.balancoArrecadacaoDespesa >= 0 ? 'Arrecadação Superior aos Gastos' : 'Gastos Superiores à Arrecadação'}
-                    </span>
+                    <div className="text-[10px] text-slate-400 mt-0.5 leading-tight">
+                      {pontoAtivo.balancoArrecadacaoDespesa >= 0
+                        ? 'Superávit Nominal (Arrecadação > Despesas Totais)'
+                        : 'Déficit Nominal (Despesas Totais > Arrecadação)'}
+                    </div>
+                    <div className="text-[9px] text-slate-500 font-mono mt-1">
+                      Despesas Totais: {formatarValorEscala(pontoAtivo.despesasTotaisComDivida)}
+                    </div>
                   </div>
                 </>
               )}
@@ -947,7 +1028,7 @@ export const SerieHistoricaImpostosChart: React.FC<Props> = ({
             </div>
 
             {/* Item 2: Gastos Primários (Aparece somente na Visão Geral) */}
-            {!apenasImpostosFederais ? (
+            {!apenasImpostosFederais && (
               <div className="flex items-center gap-2">
                 <span className="w-3.5 h-3.5 rounded-full bg-blue-600 shadow-2xs border-2 border-white ring-1 ring-blue-600" />
                 <span className="font-bold text-slate-700">
@@ -957,7 +1038,22 @@ export const SerieHistoricaImpostosChart: React.FC<Props> = ({
                   Tesouro Nacional
                 </span>
               </div>
-            ) : (
+            )}
+
+            {/* Item 3: Gastos com Dívida Pública (Aparece somente na Visão Geral) */}
+            {!apenasImpostosFederais && (
+              <div className="flex items-center gap-2">
+                <span className="w-3.5 h-3.5 rounded-full bg-amber-600 shadow-2xs border-2 border-white ring-1 ring-amber-600 border-dashed" />
+                <span className="font-bold text-slate-700">
+                  Gastos com a Dívida Pública (Juros e Encargos)
+                </span>
+                <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">
+                  Tesouro / Bacen
+                </span>
+              </div>
+            )}
+
+            {apenasImpostosFederais && (
               <span className="text-[11px] text-slate-400 italic">
                 * Outras despesas orçamentárias ocultadas pelo filtro ativo
               </span>

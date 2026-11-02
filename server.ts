@@ -195,7 +195,7 @@ app.get('/api/localidades', (_req, res) => {
 let cacheTransparencia: { data: typeof DADOS_TRANSPARENCIA_SNAPSHOT; timestamp: number } | null = null;
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutos
 
-// Endpoint de Indicadores Macro (Sincronizado com transparenciapolitica.app)
+// Endpoint de Indicadores Macro (Sincronizado com fontes abertas e fallback auditado)
 app.get('/api/transparencia/indicadores', async (_req, res) => {
   const agora = Date.now();
   if (cacheTransparencia && agora - cacheTransparencia.timestamp < CACHE_TTL_MS) {
@@ -204,23 +204,66 @@ app.get('/api/transparencia/indicadores', async (_req, res) => {
 
   try {
     const [gastosRes, receitaRes, setoresRes] = await Promise.allSettled([
-      fetch('https://transparenciapolitica.app/api/gastos-total', { signal: AbortSignal.timeout(4000) }),
-      fetch('https://transparenciapolitica.app/api/receita-impostos', { signal: AbortSignal.timeout(4000) }),
-      fetch('https://transparenciapolitica.app/api/despesas-setores', { signal: AbortSignal.timeout(4000) }),
+      fetch('https://transparenciapolitica.app/api/gastos-total', { signal: AbortSignal.timeout(3000) }),
+      fetch('https://transparenciapolitica.app/api/receita-impostos', { signal: AbortSignal.timeout(3000) }),
+      fetch('https://transparenciapolitica.app/api/despesas-setores', { signal: AbortSignal.timeout(3000) }),
     ]);
 
-    let gastos = DADOS_TRANSPARENCIA_SNAPSHOT.gastos;
-    let receita = DADOS_TRANSPARENCIA_SNAPSHOT.receita;
-    let despesasSetores = DADOS_TRANSPARENCIA_SNAPSHOT.despesasSetores;
+    let gastos = { ...DADOS_TRANSPARENCIA_SNAPSHOT.gastos };
+    let receita = { ...DADOS_TRANSPARENCIA_SNAPSHOT.receita };
+    let despesasSetores = { ...DADOS_TRANSPARENCIA_SNAPSHOT.despesasSetores };
+    let teveAtualizacaoExterna = false;
 
     if (gastosRes.status === 'fulfilled' && gastosRes.value.ok) {
-      gastos = await gastosRes.value.json();
+      const gJson = await gastosRes.value.json();
+      if (gJson && typeof gJson.total === 'number') {
+        gastos = {
+          ...gastos,
+          total: Number(gJson.total),
+          deputados: typeof gJson.deputados === 'number' ? Number(gJson.deputados) : gastos.deputados,
+          senadores: typeof gJson.senadores === 'number' ? Number(gJson.senadores) : gastos.senadores,
+          ano: typeof gJson.ano === 'number' ? Number(gJson.ano) : gastos.ano,
+          membrosCamara: 513,
+          membrosSenado: 81,
+          mediaPorDeputado: Number((Number(gJson.deputados || gastos.deputados) / 513).toFixed(2)),
+          mediaPorSenador: Number((Number(gJson.senadores || gastos.senadores) / 81).toFixed(2)),
+        };
+        teveAtualizacaoExterna = true;
+      }
     }
+
     if (receitaRes.status === 'fulfilled' && receitaRes.value.ok) {
-      receita = await receitaRes.value.json();
+      const rJson = await receitaRes.value.json();
+      if (rJson && typeof rJson.receitas === 'number') {
+        receita = {
+          ...receita,
+          ano: typeof rJson.ano === 'number' ? Number(rJson.ano) : receita.ano,
+          receitas: Number(rJson.receitas),
+          receitaTributaria: typeof rJson.receitaTributaria === 'number' ? Number(rJson.receitaTributaria) : Number(rJson.receitas),
+          receitaLiquidaGovernoCentral: typeof rJson.receitaLiquidaGovernoCentral === 'number' ? Number(rJson.receitaLiquidaGovernoCentral) : receita.receitaLiquidaGovernoCentral,
+          resultadoPrimario: typeof rJson.resultadoPrimario === 'number' ? Number(rJson.resultadoPrimario) : receita.resultadoPrimario,
+        };
+        teveAtualizacaoExterna = true;
+      }
     }
+
     if (setoresRes.status === 'fulfilled' && setoresRes.value.ok) {
-      despesasSetores = await setoresRes.value.json();
+      const sJson = await setoresRes.value.json();
+      if (sJson && Array.isArray(sJson.setores) && sJson.setores.length > 0) {
+        despesasSetores = {
+          periodo: String(sJson.periodo || despesasSetores.periodo),
+          totalGeral: typeof sJson.totalGeral === 'number' ? Number(sJson.totalGeral) : despesasSetores.totalGeral,
+          fonte: String(sJson.fonte || despesasSetores.fonte),
+          setores: sJson.setores.map((s: any) => ({
+            id: String(s.id),
+            nome: String(s.nome),
+            valor: Number(s.valor) || 0,
+            percentual: typeof s.percentual === 'number' ? s.percentual : undefined,
+            descricao: s.descricao ? String(s.descricao) : undefined,
+          })),
+        };
+        teveAtualizacaoExterna = true;
+      }
     }
 
     const payload = {
@@ -228,13 +271,23 @@ app.get('/api/transparencia/indicadores', async (_req, res) => {
       receita,
       despesasSetores,
       ultimaAtualizacao: new Date().toISOString(),
-      fonte: 'Transparência Política (transparenciapolitica.app) · Portal da Transparência · Câmara · Senado',
+      fonte: teveAtualizacaoExterna
+        ? 'Transparência Política (transparenciapolitica.app) · Portal da Transparência (CGU) · Tesouro Transparente'
+        : DADOS_TRANSPARENCIA_SNAPSHOT.fonte,
+      status: (teveAtualizacaoExterna ? 'ao_vivo' : 'auditado') as 'ao_vivo' | 'auditado',
+      cached: false,
+      fallback: !teveAtualizacaoExterna,
     };
 
     cacheTransparencia = { data: payload, timestamp: agora };
-    return res.json({ ...payload, cached: false });
+    return res.json(payload);
   } catch (_err) {
-    return res.json({ ...DADOS_TRANSPARENCIA_SNAPSHOT, cached: true, fallback: true });
+    return res.json({
+      ...DADOS_TRANSPARENCIA_SNAPSHOT,
+      cached: false,
+      fallback: true,
+      status: 'fallback',
+    });
   }
 });
 

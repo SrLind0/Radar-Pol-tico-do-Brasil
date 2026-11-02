@@ -11,7 +11,8 @@ import {
   MessageSquare,
   ShieldCheck,
   GitCompare,
-  Vote
+  Vote,
+  Building2
 } from 'lucide-react';
 import { CandidateAvatar } from './CandidateAvatar';
 import { PoliticianChatModal } from './PoliticianChatModal';
@@ -116,25 +117,44 @@ export const PoliticianCard: React.FC<Props> = ({
           </div>
 
           {/* Métrica 3: Gastos com Cota Parlamentar por Ano */}
-          <div
-            className="p-2.5 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col justify-between"
-            title={`Cota Parlamentar: ${infoCota.valorFormatado} / ano (${infoCota.subtitulo})`}
-          >
-            <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-              <DollarSign className="w-3 h-3 text-indigo-600" /> Cota Gasta / Ano
-            </span>
-            <div className="mt-1">
-              <div className="flex items-baseline gap-1">
-                <span className="text-xs font-black text-slate-900 font-mono">
-                  {infoCota.valorCompacto}
-                </span>
-                <span className="text-[10px] text-slate-400 font-semibold">/ano</span>
-              </div>
-              <span className="text-[9px] block text-slate-500 font-medium truncate mt-0.5">
-                {infoCota.subtitulo}
+          {infoCota.elegivel ? (
+            <div
+              className="p-2.5 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col justify-between"
+              title={`Cota Parlamentar: ${infoCota.valorFormatado} / ano (${infoCota.subtitulo})`}
+            >
+              <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                <DollarSign className="w-3 h-3 text-indigo-600" /> Cota Gasta / Ano
               </span>
+              <div className="mt-1">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xs font-black text-slate-900 font-mono">
+                    {infoCota.valorCompacto}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-semibold">/ano</span>
+                </div>
+                <span className="text-[9px] block text-slate-500 font-medium truncate mt-0.5">
+                  {infoCota.subtitulo}
+                </span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div
+              className="p-2.5 rounded-2xl bg-slate-100/70 border border-slate-200/80 flex flex-col justify-between"
+              title={infoCota.motivoIneligibilidade || 'Cargo do Poder Executivo — Não possui direito à Cota Parlamentar (CEAP)'}
+            >
+              <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                <Building2 className="w-3 h-3 text-slate-400" /> Cota Parlamentar
+              </span>
+              <div className="mt-1">
+                <span className="text-[10px] font-bold text-slate-700 bg-slate-200/60 px-1.5 py-0.5 rounded block truncate">
+                  Sem direito à CEAP
+                </span>
+                <span className="text-[9px] block text-slate-500 font-medium truncate mt-0.5">
+                  {infoCota.subtitulo}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Métrica 4: Situação na Justiça */}
           <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col justify-between">

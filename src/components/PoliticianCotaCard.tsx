@@ -40,7 +40,7 @@ export const PoliticianCotaCard: React.FC<Props> = ({ politico }) => {
   const [isDropdownMesAberto, setIsDropdownMesAberto] = useState<boolean>(false);
 
   // Mês ativo
-  const mesAtivo: MesCotaParlamentar = useMemo(() => {
+  const mesAtivo: MesCotaParlamentar | undefined = useMemo(() => {
     return cotaData.meses.find((m) => m.mes === mesSelecionado) || cotaData.meses[0];
   }, [cotaData, mesSelecionado]);
 
@@ -48,6 +48,34 @@ export const PoliticianCotaCard: React.FC<Props> = ({ politico }) => {
   const mesesComAlerta90 = useMemo(() => {
     return cotaData.meses.filter((m) => m.atingiuAlerta90);
   }, [cotaData]);
+
+  // Se o cargo não for elegível à cota parlamentar (ex: Executivo ou inativo)
+  if (!cotaData.elegivel) {
+    return (
+      <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-xs space-y-4 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200/80 flex items-center justify-center mx-auto shadow-xs">
+          <Building2 className="w-7 h-7" />
+        </div>
+        <div className="max-w-md mx-auto space-y-2">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100/80 text-amber-900 border border-amber-200">
+            Regra Oficial de Benefício
+          </span>
+          <h4 className="font-black text-base sm:text-lg text-slate-900 tracking-tight">
+            {cotaData.motivoIneligibilidade || 'Cargo do Poder Executivo — Não possui direito à Cota Parlamentar (CEAP)'}
+          </h4>
+          <p className="text-xs text-slate-600 leading-relaxed">
+            A Cota para o Exercício da Atividade Parlamentar (CEAP/CEAPS) é uma verba indenizatória restrita a <strong>Deputados Federais</strong> e <strong>Senadores</strong> no exercício do mandato legislativo.
+          </p>
+          <p className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+            Chefes do Poder Executivo (Presidente, Governadores e Prefeitos) e parlamentares licenciados <strong>não utilizam e não possuem cota parlamentar</strong>.
+          </p>
+        </div>
+        <div className="pt-2 border-t border-slate-100 text-[10px] text-slate-400">
+          Fundamentação Legal: Ato da Mesa da Câmara dos Deputados nº 43/2009 · Ato da Comissão Diretora do Senado Federal nº 4/2014
+        </div>
+      </div>
+    );
+  }
 
   const renderIconeCategoria = (icone: string, classe: string = 'w-4 h-4') => {
     switch (icone) {

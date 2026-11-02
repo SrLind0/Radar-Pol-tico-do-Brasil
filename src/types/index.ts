@@ -128,6 +128,7 @@ export interface Politico {
   };
   auditoriaTimestamp: string;
   fonteOficial: string;
+  emExercicio?: boolean;
   
   // Métricas de Impacto
   metricas: {

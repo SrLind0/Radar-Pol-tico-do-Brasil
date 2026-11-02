@@ -31,7 +31,7 @@ import {
 import { CandidateAvatar } from './CandidateAvatar';
 import { PoliticianFefcCard } from './PoliticianFefcCard';
 import { PoliticianCotaCard } from './PoliticianCotaCard';
-import { getGastoCotaAnualPolitico } from '../data/cotaData';
+import { getGastoCotaAnualPolitico, isElegivelCotaParlamentar } from '../data/cotaData';
 import {
   getMateriaJudicialPolitico,
   getConsultaJudicialOficial,
@@ -395,8 +395,8 @@ export const PoliticianDetailModal: React.FC<Props> = ({
                 {/* Painel Completo de Cota Parlamentar (CEAP / CEAPS) com Benchmarking e Histórico Mensal */}
                 <PoliticianCotaCard politico={politico} />
 
-                {/* Comprovantes e Notas Fiscais Recentes (Sincronizado com Transparência Política) */}
-                {(politico.cargo.includes('Senador') || politico.cargo.includes('Senadora') || politico.cargo.includes('Deputado Federal') || politico.cargo.includes('Deputada Federal')) && (
+                {/* Comprovantes e Notas Fiscais Recentes (Apenas para autoridades elegíveis à CEAP) */}
+                {isElegivelCotaParlamentar(politico.cargo, politico.emExercicio !== false) && (
                   <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-xs">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-3 border-b border-slate-100">
                       <div>

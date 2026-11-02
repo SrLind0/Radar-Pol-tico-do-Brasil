@@ -2,9 +2,12 @@ import { GASTOS_GOVERNO_HISTORICO, ANOS_DISPONIVEIS_GASTOS } from './gastosHisto
 
 export interface PontoSerieHistorica {
   ano: number;
-  impostosFederais: number; // Arrecadação de Impostos Federais (Governo Central)
-  gastosPrimarios: number;  // Despesas Primárias Totais do Governo Central
-  balancoArrecadacaoDespesa: number; // Arrecadação menos Gastos Totais (Balanço Arrecadação vs Despesa)
+  impostosFederais: number; // Arrecadação de Impostos Federais (Governo Central / RFB)
+  gastosPrimarios: number;  // Despesas Primárias Totais do Governo Central (STN)
+  gastosDivida: number;     // Gastos com Juros e Encargos da Dívida Pública Federal (Tesouro Nacional / Bacen)
+  despesasTotaisComDivida: number; // Despesas Primárias + Gastos com a Dívida Pública (gastosPrimarios + gastosDivida)
+  balancoArrecadacaoDespesa: number; // Balanço Arrecadação vs. Despesas contando com os gastos com dívidas do governo (impostos - despesasTotaisComDivida)
+  balancoSemDivida: number; // Balanço tradicional primário apenas (impostos - gastosPrimarios)
   populacao: number;
   arrecadacaoPerCapita: number;
   titulo: string;
@@ -22,7 +25,12 @@ export const SERIE_HISTORICA_IMPOSTOS_2000_2026: PontoSerieHistorica[] = (() => 
     const dados = GASTOS_GOVERNO_HISTORICO[ano];
     const impostos = dados ? dados.arrecadacaoTotal : 0;
     const gastos = dados ? dados.totalGeral : 0;
-    const balanco = impostos - gastos;
+    const divida = dados ? dados.gastosDivida : 0;
+    const despesasTotais = gastos + divida;
+
+    // Balanço oficial atualizado contando expressamente com os gastos com dívidas do governo:
+    const balanco = impostos - despesasTotais;
+    const balancoSemDivida = impostos - gastos;
     
     // Cálculo dinâmico simples de regressão demográfica brasileira como fallback caso os dados não venham preenchidos
     const populacaoFallback = 213000000 - ((2026 - ano) * 1500000);
@@ -42,7 +50,10 @@ export const SERIE_HISTORICA_IMPOSTOS_2000_2026: PontoSerieHistorica[] = (() => 
       ano,
       impostosFederais: impostos,
       gastosPrimarios: gastos,
+      gastosDivida: divida,
+      despesasTotaisComDivida: despesasTotais,
       balancoArrecadacaoDespesa: balanco,
+      balancoSemDivida,
       populacao,
       arrecadacaoPerCapita: perCapita,
       titulo: dados?.titulo || `Ano ${ano}`,

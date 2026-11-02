@@ -54,4 +54,6 @@ export interface CotaParlamentarResumo {
   meses: MesCotaParlamentar[];
   categorias: CategoriaCotaResumo[];
   despesasRecentes: DespesaCotaDetalhada[];
+  elegivel: boolean;
+  motivoIneligibilidade?: string;
 }

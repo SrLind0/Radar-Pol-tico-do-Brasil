@@ -252,8 +252,8 @@ export const CompareView: React.FC<Props> = ({
                   const cotaA = getGastoCotaAnualPolitico(politicoA);
                   return (
                     <>
-                      <span className="text-sm sm:text-base font-black font-mono text-slate-900 block">
-                        {cotaA.valorFormatado} / ano
+                      <span className={`text-sm sm:text-base font-black font-mono block ${cotaA.elegivel ? 'text-slate-900' : 'text-slate-500 text-xs sm:text-sm'}`}>
+                        {cotaA.elegivel ? `${cotaA.valorFormatado} / ano` : 'Não aplicável'}
                       </span>
                       <p className="text-[10px] text-slate-400">
                         {cotaA.subtitulo}
@@ -273,8 +273,8 @@ export const CompareView: React.FC<Props> = ({
                   const cotaB = getGastoCotaAnualPolitico(politicoB);
                   return (
                     <>
-                      <span className="text-sm sm:text-base font-black font-mono text-slate-900 block">
-                        {cotaB.valorFormatado} / ano
+                      <span className={`text-sm sm:text-base font-black font-mono block ${cotaB.elegivel ? 'text-slate-900' : 'text-slate-500 text-xs sm:text-sm'}`}>
+                        {cotaB.elegivel ? `${cotaB.valorFormatado} / ano` : 'Não aplicável'}
                       </span>
                       <p className="text-[10px] text-slate-400">
                         {cotaB.subtitulo}

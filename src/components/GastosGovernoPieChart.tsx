@@ -821,7 +821,7 @@ export const GastosGovernoPieChart: React.FC<Props> = ({
             </div>
           </div>
         ) : (
-          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 text-xs">
             <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-2xs">
               <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">
                 Gasto Primário ({dadosAnoOrcamento.ano})
@@ -830,43 +830,58 @@ export const GastosGovernoPieChart: React.FC<Props> = ({
                 {formatarMoedaCompacta(dadosAnoOrcamento.totalGeral)}
               </span>
               <span className="text-[10px] text-slate-500 font-mono block mt-0.5">
-                {formatarMoedaCompleta(dadosAnoOrcamento.totalGeral)}
+                Despesas centrais LOA
               </span>
             </div>
 
             <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-2xs">
-              <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">
+              <span className="text-[10px] uppercase font-bold text-amber-600 tracking-wider block">
+                Dívida Pública (Juros)
+              </span>
+              <span className="text-base sm:text-lg font-black text-amber-700 block mt-0.5">
+                {formatarMoedaCompacta(dadosAnoOrcamento.gastosDivida)}
+              </span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">
+                Encargos Bacen / Tesouro
+              </span>
+            </div>
+
+            <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-2xs">
+              <span className="text-[10px] uppercase font-bold text-emerald-600 tracking-wider block">
                 Arrecadação Federal
               </span>
               <span className="text-base sm:text-lg font-black text-emerald-700 block mt-0.5">
                 {formatarMoedaCompacta(dadosAnoOrcamento.arrecadacaoTotal)}
               </span>
               <span className="text-[10px] text-slate-500 block mt-0.5">
-                Receitas brutas da União
+                Receita Bruta União
               </span>
             </div>
 
             <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-2xs">
-              <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">
-                Gasto Médio por Cidadão
+              <span className="text-[10px] uppercase font-bold text-slate-600 tracking-wider block">
+                Balanço c/ Dívida
+              </span>
+              <span className={`text-base sm:text-lg font-black block mt-0.5 ${
+                dadosAnoOrcamento.balancoArrecadacaoDespesa >= 0 ? 'text-emerald-700' : 'text-rose-600'
+              }`}>
+                {dadosAnoOrcamento.balancoArrecadacaoDespesa >= 0 ? '+' : ''}
+                {formatarMoedaCompacta(dadosAnoOrcamento.balancoArrecadacaoDespesa)}
+              </span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">
+                {dadosAnoOrcamento.balancoArrecadacaoDespesa >= 0 ? 'Superávit Nominal' : 'Déficit Nominal'}
+              </span>
+            </div>
+
+            <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-2xs col-span-2 sm:col-span-1">
+              <span className="text-[10px] uppercase font-bold text-blue-600 tracking-wider block">
+                Gasto Médio / Cidadão
               </span>
               <span className="text-base sm:text-lg font-black text-blue-700 block mt-0.5">
                 {formatarMoedaCompleta(dadosAnoOrcamento.gastoPerCapita)}
               </span>
               <span className="text-[10px] text-slate-500 block mt-0.5">
-                População: {(dadosAnoOrcamento.populacaoEstimada / 1e6).toFixed(1)} mi
-              </span>
-            </div>
-
-            <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-2xs">
-              <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">
-                Cota Parlamentar Congresso
-              </span>
-              <span className="text-base sm:text-lg font-black text-amber-700 block mt-0.5">
-                {formatarMoedaCompacta(dadosAnoOrcamento.gastosCongresso.total)}
-              </span>
-              <span className="text-[10px] text-slate-500 block mt-0.5">
-                Câmara + Senado em {dadosAnoOrcamento.ano}
+                Pop: {(dadosAnoOrcamento.populacaoEstimada / 1e6).toFixed(1)} mi
               </span>
             </div>
           </div>
